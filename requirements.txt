@@ -2,4 +2,5 @@ browser-use
 langchain-google-genai
 langchain-openai
 python-dotenv
+mcp
 playwright

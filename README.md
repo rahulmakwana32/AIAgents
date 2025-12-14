@@ -71,4 +71,37 @@ An intelligent, visible browser agent built with [browser-use](https://github.co
 ## Project Structure
 
 *   `visible_agent.py`: Main entry point containing the agent logic and interactive loop.
+*   `server.py`: MCP server implementation exposing the browser agent as a tool.
 *   `.env`: Stores sensitive API keys (not committed to version control).
+
+## MCP Server Usage
+
+You can run this project as an [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server to use the browser agent from MCP-compliant clients (like Claude Desktop).
+
+1.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+2.  **Run the server:**
+    ```bash
+    # Run with mcp CLI (recommended for development)
+    mcp run server.py
+
+    # OR run directly with python
+    python server.py
+    ```
+
+3.  **Configure in Claude Desktop:**
+    Add the following to your `claude_desktop_config.json`:
+    ```json
+    {
+      "mcpServers": {
+        "ai-browser-agent": {
+          "command": "python",
+          "args": ["/absolute/path/to/ai-browser-agent/server.py"]
+        }
+      }
+    }
+    ```
+
