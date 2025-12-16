@@ -105,3 +105,17 @@ You can run this project as an [MCP (Model Context Protocol)](https://modelconte
     }
     ```
 
+## Custom Client Usage
+
+You can also use the provided Python client to interact with the server programmatically or via a CLI.
+
+```bash
+python client.py
+```
+This will connect to the local `server.py`.
+
+*   **Browser Task**: Type your instruction normally (e.g., "Search for AI").
+*   **Terminal Task**: Prefix with `term:` (e.g., `term: ls -la`).
+
+
+
