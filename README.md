@@ -104,5 +104,4 @@ python client.py
 *   Look at **`server.py`**: Notice the `@mcp.tool()` decorators. This is how we expose Python functions as API endpoints for the brain to use.
 *   **Experiment**: Try modifying the `system_instruction` in `client.py` to change the agent's personality.
 
----
-*Built with engineering rigor for the modern AI stack.*
+ 
