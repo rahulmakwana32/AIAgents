@@ -104,3 +104,4 @@ cython_debug/
 
 # macOS
 .DS_Store
+venv/

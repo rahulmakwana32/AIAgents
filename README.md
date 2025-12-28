@@ -1,121 +1,108 @@
-# AI Browser Agent
+# AI Agent System: An Agentic Workflow Architecture
 
-An intelligent, visible browser agent built with [browser-use](https://github.com/browser-use/browser-use) and [LangChain](https://github.com/langchain-ai/langchain). This agent can control a web browser to perform tasks based on natural language instructions, supporting both Google Gemini and OpenAI models.
+**Architected for Context, Observability, and Action.**
 
-## Features
+## 📖 The "Why": Engineering Beyond Chatbots
 
-*   **Multi-LLM Support**: Choose between Google Gemini (Vision & Reasoning) and OpenAI GPT-4o.
-*   **Visible Execution**: Runs the browser in non-headless mode (`headless=False`) so you can watch the agent work.
-*   **Interactive Loop**: Persistent session allows you to issue multiple consecutive commands to the same browser instance.
-*   **Robust Error Handling**: Keeps the session alive even if an individual task fails.
+As software engineers, we spend approximately 70% of our time on "toil"—context switching between terminals, browser tabs, logs, and documentation. We hold complex mental models in our heads, only to lose them the moment we have to search for a syntax error.
 
-## Prerequisites
+This project is not just another "AI Chatbot." It is an architectural pattern for **Agentic Workflows**. It is designed to bridge the gap between *reasoning* (the LLM) and *doing* (the tools), solving the fundamental problem of **Context Retention** in automated systems.
 
-*   Python 3.11 or higher
-*   A Google Cloud Project with Gemini API access OR an OpenAI API Key.
+We built this to answer a specific question: *How do we build a system that can investigate a root cause across multiple domains (Web, Terminal, Logs) without losing the thread of the investigation?*
 
-## Installation
+## 🏗️ Architecture & Design Decisions
 
-1.  **Clone the repository:**
+We chose a **Client-Server Architecture** utilizing the **Model Context Protocol (MCP)**. Here is why:
+
+### 1. Decoupling "Brain" from "Body" (MCP)
+*   **The Problem**: Tightly coupling LLM logic with tool execution leads to monolithic, fragile codebases. If you want to swap OpenAI for Gemini, or add a new tool, you shouldn't have to rewrite your entire agent loop.
+*   **The Solution**: We use **MCP** to treat tools as microservices.
+    *   **Server (`server.py`)**: The "Body." It exposes capabilities (Splunk, Browser, Terminal) but has no opinion on how they are used. It is stateless and robust.
+    *   **Client (`client.py`)**: The "Brain." It handles state, history, and reasoning. It consumes the tools exposed by the server.
+*   **Benefit**: This separation of concerns allows us to scale tools independently of the reasoning engine.
+
+### 2. Solving State & Context Retention
+*   **The Problem**: Most AI agents are "goldfish"—they perform an action and forget the result immediately after summarizing it. This makes multi-step debugging (e.g., "Get logs" -> "Summarize" -> "Why was it high?") impossible.
+*   **The Solution**: **Source-Aware Context Routing**.
+    *   We implemented a custom history manager in the client that tracks the *provenance* of data.
+    *   When the agent needs to answer a follow-up question, it doesn't just look at the previous summary; it retrieves the original raw data artifact from the history.
+*   **Benefit**: The agent maintains a "Mental Model" of the investigation, similar to a senior engineer keeping a debug session in their head.
+
+### 3. The "Generic" Transformation Pattern
+*   **The Problem**: Building specific tools for every data format (JSON to CSV, XML to HTML) is unmaintainable.
+*   **The Solution**: A **Generic Action Tool** that leverages the LLM's reasoning capabilities to perform ad-hoc transformations on *existing context*.
+*   **Benefit**: We write the tool once, and it solves infinite formatting problems.
+
+## 🛠️ System Capabilities
+
+The system exposes four primary interfaces, designed to mimic the workflow of a Site Reliability Engineer (SRE):
+
+1.  **`run_splunk_query` (The Analyst)**
+    *   **Capability**: Executes SPL against enterprise logs.
+    *   **Intelligence**: Automatically performs anomaly detection on results. It doesn't just return data; it returns *insights* (e.g., "Detected 30% spike in 500 errors").
+    *   **Resilience**: Includes self-healing logic to correct invalid SPL syntax automatically.
+
+2.  **`run_browser_task` (The Observer)**
+    *   **Capability**: A visible, non-headless browser instance.
+    *   **Use Case**: Verifying frontend behavior, reading documentation, or checking external dashboards.
+
+3.  **`run_terminal_task` (The Operator)**
+    *   **Capability**: Safe execution of local shell commands.
+    *   **Use Case**: Checking disk usage, verifying running processes, or managing files.
+
+4.  **`run_generic_action` (The Transformer)**
+    *   **Capability**: Post-processing of tool outputs.
+    *   **Use Case**: "Turn that Splunk output into a Markdown table for my report."
+
+## 🚀 Getting Started
+
+Designed for Python 3.11+.
+
+### Prerequisites
+*   **Python 3.11+** (Required for `browser-use`)
+*   **API Keys**: Google Gemini (Recommended for speed/cost) or OpenAI.
+*   **Splunk Credentials**: If using the Splunk tool.
+
+### Installation
+
+1.  **Clone & Environment**
     ```bash
-    git clone <repository-url>
+    git clone <repo>
     cd ai-browser-agent
-    ```
-
-2.  **Create and activate a virtual environment:**
-    ```bash
+    
+    # BRANCHING STRATEGY
+    # Use 'release' for the latest working project (Episode 2 features)
+    # Use 'main' for the stable, production-ready version
+    git checkout release
+    
     python3 -m venv venv
     source venv/bin/activate
     ```
 
-3.  **Install dependencies:**
+2.  **Dependencies**
     ```bash
-    pip install browser-use langchain-google-genai langchain-openai python-dotenv
-    ```
-    *(Note: Ensure you have `playwright` installed and browsers downloaded)*
-    ```bash
+    pip install -r requirements.txt
     playwright install
     ```
 
-## Configuration
-
-1.  Create a `.env` file in the project root:
-    ```bash
-    touch .env
-    ```
-
-2.  Add your API keys to `.env`:
+3.  **Configuration (`.env`)**
     ```env
-    GEMINI_API_KEY=your_google_api_key_here
-    OPENAI_API_KEY=your_openai_api_key_here
+    GEMINI_API_KEY=...
+    SPLUNK_HOST=localhost
+    SPLUNK_PASSWORD=...
     ```
 
-## Usage
-
-1.  **Run the agent:**
-    ```bash
-    python visible_agent.py
-    ```
-
-2.  **Select your LLM:**
-    When prompted, enter `gemini` or `openai`.
-
-3.  **Give instructions:**
-    Type your task at the `>>` prompt.
-    *   Example: *"Go to google.com and search for 'Agentic AI'"*
-    *   Example: *"Click on the first result and summarize the page"*
-
-4.  **Exit:**
-    Type `QUIT` to close the browser and end the session.
-
-## Project Structure
-
-*   `visible_agent.py`: Main entry point containing the agent logic and interactive loop.
-*   `server.py`: MCP server implementation exposing the browser agent as a tool.
-*   `.env`: Stores sensitive API keys (not committed to version control).
-
-## MCP Server Usage
-
-You can run this project as an [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server to use the browser agent from MCP-compliant clients (like Claude Desktop).
-
-1.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-2.  **Run the server:**
-    ```bash
-    # Run with mcp CLI (recommended for development)
-    mcp run server.py
-
-    # OR run directly with python
-    python server.py
-    ```
-
-3.  **Configure in Claude Desktop:**
-    Add the following to your `claude_desktop_config.json`:
-    ```json
-    {
-      "mcpServers": {
-        "ai-browser-agent": {
-          "command": "python",
-          "args": ["/absolute/path/to/ai-browser-agent/server.py"]
-        }
-      }
-    }
-    ```
-
-## Custom Client Usage
-
-You can also use the provided Python client to interact with the server programmatically or via a CLI.
-
+### Running the Agent
 ```bash
 python client.py
 ```
-This will connect to the local `server.py`.
+*The client will automatically spawn the MCP server subprocess.*
 
-*   **Browser Task**: Type your instruction normally (e.g., "Search for AI").
-*   **Terminal Task**: Prefix with `term:` (e.g., `term: ls -la`).
+## 👨‍💻 For the Junior Developer: How to Read This Code
 
+*   Start with **`client.py`**: Look at the `main` loop. Notice how we capture `user_input`, decide on an `intent`, and then dispatch to a tool. This is the "Event Loop" pattern.
+*   Look at **`server.py`**: Notice the `@mcp.tool()` decorators. This is how we expose Python functions as API endpoints for the brain to use.
+*   **Experiment**: Try modifying the `system_instruction` in `client.py` to change the agent's personality.
 
-
+---
+*Built with engineering rigor for the modern AI stack.*
