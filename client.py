@@ -271,7 +271,7 @@ async def main():
                     raw_data = ""
                     for turn in reversed(chat_history):
                         t_name = turn.get("tool", "")
-                        if t_name in ["run_splunk_query", "run_terminal_task"]:
+                        if t_name in ["run_splunk_query", "run_terminal_task", "run_browser_task", "run_generic_action"]:
                             # Avoid duplication if the last turn WAS the raw data
                             if turn != last_turn:
                                 raw_data = turn.get("assistant", "")
